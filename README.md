@@ -808,7 +808,6 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Up to 15 minutes of execution
 - Run on demand
 - Scales based on number of requests
-- Lmabda can run container Image(Must implement the container runtime API)
 - Multiple languages
     - Python
     - Node.js
@@ -829,7 +828,6 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Cognito
 - Limitations
     - RAM ⇒ 128MB to 3,008MB in 64MB increments
-    - Up to 10 GB of RAM Per function
     - Max execution time ⇒ 15 minutes
     - Environment Variables ⇒ 4KB
     - Disk capacity ⇒ 512MB
@@ -881,8 +879,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - You can use API Gateway or ALB to let users invoke Lambda functions from HTTP
 - When going through ALB, the Lambda has to be part of a target group
 - HTTP requests are transformed into JSON and converted back to HTTP response by ALB
-- **ALB handles Multi-Header values via specific setting **
-- Expl:HTTP= http://example.com/path?**name**=foo&**name**=bar  => JSON=  ”queryStringParameters”: {“**name**”: [“foo”,”bar”] }
+- ALB handles Multi-Header values via specific setting
 - Synchronous Services
     - API Gateway
     - CloudFront (Lambda@Edge)
@@ -893,11 +890,17 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Kinesis Data Firehose
     - Others...
 
+## Lambda@Edge
+
+- Deploy Lambda functions not in a specific region, but alongside each region around the world with your CloudFront CDN
+- We can use Lambda to change CloudFront requests and responses
+- We can also generate responses to viewers without ever sending the request to the origin
+
 ## Lambda Asynchronous Invocation
 
 - Calls made via S3, SNS, CloudWatch Events
-- Events are placed in an internal Event queue
-- Lambda retries up to three times on errors
+- **Events are placed in an internal Event queue**
+- Lambda retries up to **three** times on errors
 - In case of retries, it's important that the lambda function always returns the same value with the same inputs (idempotency) in order to catch them as duplicates in CloudWatch Logs
 - DLQ for failed processing
 - Asynchronous services
@@ -916,8 +919,11 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 ## Lambda Event Source Mapping
 
 - Calls made via Kinesis Data Stream, SQS/SQS FIFO and DynamoDB Streams
-- Records are polled from the source in all three cases
+- Records need to polled from the source in all three cases
 - The event source mapping polls the source and invokes the Lambda synchronously
+- **Batch size: how many messages we want to receive as part os a single batch**
+- **Batch window: The maximum amount of time to gather records before invoking the function**
+
 - Event Streams (for DynamoDB Streams and Kinesis)
     - Iterator for each shard and processes items in order
     - One Lambda invocation per stream shard or up to 10 batches if using parallelization
@@ -931,10 +937,10 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Queue (for SQS/SQS FIFO)
     - Queue is polled by event source mapping using long polling
     - Batch between 1 to 10 messages, up to 1000 batches per second
-    - Queue visibility timeout should be set 6x the Lambda function timeout
+    - Queue visibility timeout should be set **6x the Lambda function timeout**
     - Can use DLQ by associating one directly to SQS, not to the Lambda
     - Lambda scales up to process standard queues as quickly as possible, 60 per minute
-    - Lambda scales up to the number of active message groups for FIFO queues (by GroupID)
+    - Lambda scales up to the number of active message **groups** for FIFO queues (by GroupID)
     - If an error occurs, batches are returned to queue individually and might be reprocessed in different batches
     - Lambda might process the same item twice
     - Lambda deletes items from queues after successful processing
@@ -942,7 +948,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 ## Lambda Destinations
 
 - Successful or failed event results can be sent to destinations
-- Asynchronous invocations (both failed and successful events)
+- **Asynchronous invocations** can defines destination for both failed and successful events
     - SQS
     - SNS
     - Lambda
@@ -950,23 +956,88 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Event Source Mapping (only for discarded events on Kinesis/DynamoDB)
     - SQS
     - SNS
+## Lambda Environment Variables
+
+- Adjust the function behavior without updating code
+- Helpful to store secrets (encrypted by KMS)
+- Secrets can be encrypted by the Lambda service key, or your own CMK
 
 ## Using Lambda in a personal VPC
 
-- By default, launched in an AWS-owned VPC so can't access your VPC's resources
+- By default, launched in an AWS-owned VPC so **can't access your VPC's resources**
 - You can deploy it in your VPC by assigning it a VPC ID, security group and role
-- Lambdas in a subnet, either private or public, don't have internet access or public IPs
+- Lambda in a subnet, either private or public, don't have internet access or public IPs
+- Deploying a Lambda function in a public subnet does not give it internet access or a public IP(Unlike ec2)
+- Deploying a Lambda function in a private subnet gives it internet access if you have a NAT Gateway/Instance
 - You need a NAT Gateway to give it access to the public internet
 - DynamoDB can be accessed via IGW or via VPC Endpoint
 
+## Lambda Function Configuration
+
+- **RAM**:
+    - From 128MB to 10GB in 1MB increments
+    - The more RAM you add, the more vCPU credits you get
+    - At 1,792 MB, a function has the equivalent of one full vCPU
+    - After 1,792 MB, you get more than one CPU, and need to use multi-threading in your code to benefit from it (up to 6 vCPU)
+- **If your application is CPU-bound (computation heavy) then you need to increase RAM**
+- Timeout: default 3 seconds, maximum is 900 seconds (15 minutes)
+
+## Lambda Execution Context
+- The execution context is a temporary runtime environment that initializes any external dependencies of your lambda code
+- Great for database connections, HTTP clients, SDK clients…
+- The next function invocation can “re-use” the context to execution time and save time in initializing connections objects
+- The execution context includes the /tmp directory
+
+## /tmp space
+- If your Lambda function needs to download a big file to work, disk space to perform operations ...
+- You can use the /tmp directory
+- Max size is 512MB
+- The directory content remains when the execution context is frozen,providing transient cache that can **be used for multiple invocations**
+- For permanent persistence of object (non temporary), use S3
+
 ## Lambda Concurrency
 
-- Up to 1000 global concurrent executions
-- Can set a limit to concurrent executions by setting a reserve concurrency at the function level
-- Every call above the reserve concurrency triggers a throttle
+- Lmabda can scale up to **1000** global concurrent executions **(lambdas functions)**
+- Can set a limit to concurrent executions by setting a **reserve concurrency** at the function level
+- **Every call above the reserve concurrency triggers a throttle**
 - If there are no limits set, uptick in invocations from one Lambda can throttle all other Lambdas
+- Throttle behavior:
+    - **If synchronous invocation** => return ThrottleError - 429
+    - **If asynchronous invocation** => retry automatically and then go to DLQ
 - For asynchronous invocations, Lambda will put the request back in the queue automatically for up to 6 hours after a throttling error (429) or a system error (5xx) and reduce the retry interval
 - Can allocate concurrency before invocation with provisioned concurrency to prevent cold start
+
+## Cold Starts & Provisioned Concurrency
+- **Cold Start**:
+    - New instance => code is loaded and code outside the handler run (init)
+    - If the init is large (code, dependencies, SDK…) this process can take some time.
+    - First request served by new instances has higher latency than the rest
+ **Provisioned Concurrency**:
+    - Concurrency is allocated before the function is invoked (in advance)
+    - So the cold start **never happens** and all invocations have low latency
+    - Application Auto Scaling can manage concurrency (schedule or target utilization)
+    
+## Lambda Layers
+- Custom Runtimes
+    - Ex: C++ https://github.com/awslabs/aws-lambda-cpp
+    - Ex: Rust https://github.com/awslabs/aws-lambda-rust-runtime
+- Externalize Dependencies to re-use them(caching dependencies)
+
+## Lambda Container Images
+    - Deploy Lambda function as container images of up to 10GB from ECR
+    - Can create your own image as long as it implements the Lambda Runtime API
+## AWS Lambda Versions 
+- When you work on a Lambda function, we work on **$LATEST**
+- Versions are immutable, have increasing version numbers 
+- Versions get their own ARN (Amazon Resource Name)
+- Version = code + configuration (nothing can be changed - immutable)
+
+## AWS Lambda Aliases 
+- Aliases are ”pointers” to Lambda function versions
+- We can define a “dev”, ”test”, “prod” aliases and have them point at different lambda versions
+- Aliases are **mutable** 
+- Aliases enable Blue / Green deployment by assigning weights to lambda functions
+- **Aliases cannot reference aliases**
 
 ## CodeDeploy automations
 
