@@ -808,6 +808,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Up to 15 minutes of execution
 - Run on demand
 - Scales based on number of requests
+- Lmabda can run container Image(Must implement the container runtime API)
 - Multiple languages
     - Python
     - Node.js
@@ -828,6 +829,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Cognito
 - Limitations
     - RAM ⇒ 128MB to 3,008MB in 64MB increments
+    - Up to 10 GB of RAM Per function
     - Max execution time ⇒ 15 minutes
     - Environment Variables ⇒ 4KB
     - Disk capacity ⇒ 512MB
@@ -879,7 +881,8 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - You can use API Gateway or ALB to let users invoke Lambda functions from HTTP
 - When going through ALB, the Lambda has to be part of a target group
 - HTTP requests are transformed into JSON and converted back to HTTP response by ALB
-- ALB handles Multi-Header values via specific setting
+- **ALB handles Multi-Header values via specific setting **
+- Expl:HTTP= http://example.com/path?**name**=foo&**name**=bar  => JSON=  ”queryStringParameters”: {“**name**”: [“foo”,”bar”] }
 - Synchronous Services
     - API Gateway
     - CloudFront (Lambda@Edge)
