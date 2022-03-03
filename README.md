@@ -1216,7 +1216,7 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Both are key/value stores
 
 ## DynamoDB – Write Types
-...![Alt text](Write Types.png "api")
+...![Alt text](Write_Types.png "api")
 
 # API Gateway
 
