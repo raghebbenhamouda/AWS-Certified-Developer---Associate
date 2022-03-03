@@ -826,8 +826,8 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - CloudFront (Lambda@Edge)
     - SNS/SQS
     - Cognito
-- Limitations
-    - RAM ⇒ 128MB to 3,008MB in 64MB increments
+- Limitations per **Region**
+    - RAM ⇒ 128MB to 10 GB in 1 MB increments
     - Max execution time ⇒ 15 minutes
     - Environment Variables ⇒ 4KB
     - Disk capacity ⇒ 512MB
@@ -1048,13 +1048,16 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Canary ⇒ Try X% then go to 100% after N minutes
     - AllAtOnce ⇒ 100% right away
 - Rollback strategies are assigned using `PreTraffic` and `PostTraffic` hooks
+- We can create pre and post traffic hooks to check the health of the Lambda function
+- If anything goes wrong then the traffic hooks can be failing or CloudWatch alarm can be failing and your CodeDeploy can know that something is going wrong
+and therefore do a roll back and put the traffic back all onto V1.
 
 ## Lambda Best Practices
 
 - Minimize handler work by moving heavy-duty tasks outside of it
 - ENV variables for DB connections, passwords and similar (leverage KMS)
 - Minimize deployment package size by using layers and breaking down functions
-- Never use recursion in Lambdas
+- **Never use recursion in Lambdas**
 
 # DynamoDB
 
@@ -1069,7 +1072,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 ## DynamoDB Table
 
 - Each table has a Primary Key
-- Made of items, can have infinite number of items but each item's max size is 400KB
+- Made of items, can have infinite number of items but each item's max size is `400KB`
 - Each item has attributes, they can be null, can be added over time and can be nested
 - Supports scalar, document and set data types
 - Can be used for session state cache
@@ -1099,55 +1102,58 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Partition key only (hash)
     - Unique for each item
     - Diverse so that data is distributed
-- Partition key and Sort key
+- Partition key and Sort key(hash + range)
     - Combination must be unique
     - Data is grouped by partition key and sorted by sort key (also called range key)
 - Choosing a Partition key
     - High cardinality
     - Maximizes distribution
-- Data is divided in partitions based on the hash of the partition key
-- Can calculate the number of partitions with the formula
+- **Data is divided in partitions based on the hash of the partition key**
+- Can calculate the number of partitions with the formula(we do not need to know these formula)
 $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Can optimize partitions with Write Sharding, or adding random but predictable suffix to partition keys in order to spread writes across multiple partitions
 
 ## RCU and WCU
 
+- 
 - Read and write capacities have to be provisioned per table
 - Can set up auto-scaling of RCU/WCU but it's more expensive
 - Throughput can be exceeded temporarily with burst credit but if you don't have any credit you get a `ProvisionedThroughputException` error
 - These errors can be from hot keys, hot partition or very large items
-- Reads can be either Strongly consistent or eventually consistent
-- RCUs and WCUs are spread evenly among partitions
+- `Reads can be either Strongly consistent or eventually consistent`
+- **RCUs and WCUs are spread evenly among partitions**
 - Read Capacity Units (RCU)
-    - 1 RCU = 1 strongly consistent read/second or 2 eventually consistent read/second for items up to 4KB
-    - More KB, more RCUs
+    - `1 RCU = 1 strongly consistent read/second or 2 eventually consistent read/second for items up to 4KB`
+    - `More KB, more RCUs`
     - KBs are rounded up ⇒ 4.5KB item needs 2 WCUs
 - Write Capacity Units (WCU)
-    - 1 WCU = 1 write/second for an item up to 1KB
-    - More KB, more WCUs
+    - `1 WCU = 1 write/second for an item up to 1KB`
+    - `More KB, more WCUs`
     - KBs are rounded up ⇒ 2.5KB item needs 3 WCUs
 
 ## Local Secondary Index (LSI)
 
+- Alternative Sort Key for your table
 - Up to 5 alternate range keys for a table, local to the hash key
 - Must be exactly one scalar attribute, either String, Number or Binary
 - Eventually consistent or strongly consistent reads
 - Partition key must be the same as the base table
 - Shares capacity with base table
-- Defined at table creation time
+- **Defined only at table creation time**
 
 ## Global Secondary Index (GSI)
 
+- Alternative Primary Key (HASH or HASH+RANGE) from the base table
 - Made of partition key and optional sort key
 - Creates a new table where you can project attributes on
 - Has its own provisioned capacity
 - Can be modified or updated whenver
 - Only eventually consistent reads
-- If GSI's WCU are throttled, also the base table's writes will be throttled
+- `If GSI's WCU are throttled, also the base table's writes will be throttled`
 
 ## DynamoDB Streams
 
-- A changelog stream of all CUD activities in DynamoDB
+- Ordered stream of item-level modifications (create/update/delete) in a table
 - Built on shards like Kinesis, but automatically provisioned by AWS
 - Can be read by EC2/Lambda (as Event Source Mapping) to react in quasi-real-time to changes
 - Needed for cross-region replication
@@ -1158,10 +1164,24 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - OLD_IMAGE ⇒ Full item before modification
     - NEW_AND_OLD_IMAGES ⇒ Full item both before and after modification
 
+## DynamoDB CLI
+- `--projection-expression:` one or more attributes to retrieve
+- `--filter-expression:` filter items before returned to you
+- General AWS CLI Pagination options (e.g., DynamoDB, S3, …)
+    - `--page-size:` specify that AWS CLI retrieves the full list of items but with a larger
+    number of API calls instead of one API call (default: 1000 items)
+    - `--max-items:` max number of items to show in the CLI (returns NextToken)
+    - -`-starting-token:` specify the last NextToken(like item number ) to retrieve the next set of items
+
 ## DynamoDB Transactions
 
 - All-or-nothing CUD operations on multiple rows in different tables at the same time
-- Consumes twice the amount on RCU/WCU
+- Consumes `2x WCUs & RCUs`
+    - DynamoDB performs 2 operations for every item (prepare & commit)
+- Two operations: (up to 25 unique items or up to 4 MB of data)
+    - `TransactGetItems` – one or more **GetItem** operations
+    - `TransactWriteItems` – one or more **PutItem**, **UpdateItem**, and **DeleteItem** operations
+- Use cases: financial transactions, managing orders, multiplayer games, …
 
 ## DynamoDB Accelerator (DAX)
 
@@ -1169,12 +1189,12 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - All writes pass though DAX, microsecond latency for cached queries or reads
 - Solves throttling issues for hot key reads
 - 5 minutes TTL, multi-AZ, up to 10 nodes in the cluster
-- Use in combination with ElastiCache if you cache data aggregation results
+- Use in combination with ElastiCache (cache data aggregation results)
 
 ## DynamoDB APIs
 
-- `PutItem` ⇒ Create or fully replace data
-- `UpdateItem` ⇒ Partial replacement of data
+- `PutItem` ⇒ Create or fully replace data(item)
+- `UpdateItem` ⇒ Partial replacement of data(we can update attribute)
 - `DeleteItem` ⇒ Delete one row/item
 - `DeleteTable` ⇒ Delete entire table
 - `ConditionExpression` ⇒ Conditional write/update based on rules
@@ -1189,6 +1209,14 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - `--page-size` ⇒ Reduce page size for call optimization
     - `--max-items` ⇒ Maximum number of results returned by call, returns also `NextToken`
     - `--starting-token` ⇒ Which `NextToken` to use to resume reading
+
+## DynamoDB as Session State Cache
+- It’s common to use DynamoDB to store session states
+- ElastiCache: is in-memory, but DynamoDB is serverless and automatic scaling
+- Both are key/value stores
+
+## DynamoDB – Write Types
+...![Alt text](Write Types.png "api")
 
 # API Gateway
 
