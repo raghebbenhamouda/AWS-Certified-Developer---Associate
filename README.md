@@ -1337,6 +1337,14 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - `4XXError` (client-side) ⇒ 400 bad request, 403 access denied, 429 throttle
     - `5XXError` (server-side) ⇒ 502 bad gateway exception, 503 service unavailable, 504 integration failure (timeout)
 
+- Throttling
+    - Account Limit
+        - API Gateway throttles requests at10000 Request/s across all API
+        - Soft limit that can be increased upon request
+- In case of throttling => 429 Too Many Requests (retriable error)
+- Can set Stage limit & Method limits to improve performance
+- You can define Usage Plans to throttle per customer
+- **Just like Lambda Concurrency, one API that is overloaded, if not limited, can cause the other APIs to be throttled**
 ## CORS
 
 - Must be enabled to receive API calls from another domain
@@ -1362,10 +1370,10 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - Fully managed user lifecycle with automatic token expiration
     - Used for authentication, while authorization is handled by each API Gateway Methods
 - Lambda Authorizer ⇒ For 3rd party tokens
-    - Token-based authorizer (JWT, OAuth)
-    - Returns ad-hoc IAM Principal and IAM Policy which is cached
+    - Token-based authorizer (JWT(Json Web Token), OAuth)
+    - Lambda returns ad-hoc IAM Principal and IAM Policy which is cached
     - Authentication is via 3rd party, authorization is via Lambda
-
+![Alt text](Lambda_authorizer.png "api")
 # Step Functions
 
 ## Step Functions Overview
