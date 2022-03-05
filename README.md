@@ -1418,6 +1418,32 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Provides a lambda-like execution environment locally
 - SAM CLI + AWS Toolkits => step-through and debug your code
 
+## SAM Policy Templates 
+
+- List of templates to apply permissions to your Lambda Functions
+- Important examples: 
+   - `S3ReadPolicy`: Gives read only permissions to objects in S3 
+   - `SQSPollerPolicy`: Allows to poll an SQS queue 
+   - `DynamoDBCrudPolicy`: CRUD = create read update delete
+
+## SAM – Exam Summary
+- SAM is built on CloudFormation
+- SAM requires the Transform and Resources sections
+- Commands to know:
+    - `sam build`: fetch dependencies and create local deployment artifacts
+    • `sam package`: package and upload to Amazon S3, generate CF template
+    • `sam deploy`: deploy to CloudFormation
+- SAM Policy templates for easy IAM policy definition
+- SAM is integrated with CodeDeploy to do deploy to Lambda aliases
+
+## Serverless Application Repository (SAR)
+- Managed repository for serverless applications
+- The applications are packaged using SAM
+- Build and publish applications that can be re-used by organizations
+- Can share publicly
+- Can share with specific AWS accounts
+- This prevents duplicate work, and just go straight to publishing
+- Application settings and behaviour can be customized using Environment variables
 # Step Functions
 
 ## Step Functions Overview
