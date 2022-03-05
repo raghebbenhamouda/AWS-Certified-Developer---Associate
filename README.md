@@ -1391,6 +1391,32 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Works with AWS Services (Lambda, DynamoDB) or HTTP endpoints
 - Routing: Incoming JSON messages are routed to a specific backend based on the routing expression
 
+# AWS Serverless Application Model (SAM)
+
+## SAM Overview
+- Framework for developing and deploying serverless applications
+- All the configuration is YAML code
+- Generate complex CloudFormation from simple SAM YAML file
+- Supports anything from CloudFormation: Outputs, Mappings, Parameters, Resources…
+- Only two commands to deploy to AWS 
+- SAM can use CodeDeploy to deploy Lambda functions
+- SAM can help you to run Lambda, API Gateway, DynamoDB locally
+
+## AWS SAM – Recipe
+- Transform Header indicates it’s SAM template: 
+   - Transform(indicative that we use SAM Template): `'AWS::Serverless-2016-10-31'`
+- Write Code 
+   - `AWS::Serverless::Function`
+   - `AWS::Serverless::Api `
+   -  `AWS::Serverless::SimpleTable` 
+- Package & Deploy: 
+   - aws cloudformation package / `sam package`
+   - aws cloudformation deploy / `sam deploy`
+![Alt text](sam.png "api")
+## SAM – CLI Debugging
+- Locally build, test, and debug your serverless applications that are defined using AWS SAM templates
+- Provides a lambda-like execution environment locally
+- SAM CLI + AWS Toolkits => step-through and debug your code
 
 # Step Functions
 
