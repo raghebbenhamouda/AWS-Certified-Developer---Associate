@@ -1215,6 +1215,19 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - ElastiCache: is in-memory, but DynamoDB is serverless and automatic scaling
 - Both are key/value stores
 
+## DynamoDB – Security & Other Features
+- **Security**:
+    - VPC Endpoints available to access DynamoDB without using the Internet
+    - Access fully controlled by IAM
+    - Encryption at rest using AWS KMS and in-transit using SSL/TLS
+- **Backup and Restore feature available**:
+    - Point-in-time Recovery (PITR) like RDS
+    - No performance impact
+- **Global Tables**:
+    - Multi-region, multi-active, fully replicated, high performance
+- **DynamoDB Local**:
+    - Develop and test apps locally without accessing the DynamoDB web service (without Internet)
+- **AWS Database Migration Service (AWS DMS)** can be used to migrate to DynamoDB (from MongoDB, Oracle, MySQL, S3, …)
 ## DynamoDB – Write Types
 ![Alt text](Write_Types.png "api")
 
@@ -1230,12 +1243,12 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Soft limit of 10,000 requests per second across all APIs per account (429 Error)
 - Cache API responses
     - Default TTL is 300s, min 0s, max 3600s
-    - Defined at stage level
+    - **Defined at stage level**
     - Can override cache settings at the method level
     - Capacity between 0.5GB and 237GB
-    - Client can invalidate cache using header `CacheControl:max-age=0` with proper IAM
+    - **Client can invalidate cache using header `CacheControl:max-age=0` with proper IAM**
 - Multiple endpoint types
-    - Edge-Optimized ⇒ Via CloudFront Edge locations
+    - Edge-Optimized ⇒ Via CloudFront Edge locations(Requests are routed through the CloudFront Edge locations (improves latency) and the API Gateway still lives in only one region)
     - Regional ⇒ For users in one specific region
     - Private ⇒ Accessed within a VPC
 
@@ -1251,6 +1264,7 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
         - Used to modify request and response
         - Rename/modify query string parameters, content of the body, headers
         - Uses Apache Velocity Template Language (VTL)
+        - Example: JSON to XML with SOAP
 - Lambda Proxy
     - Request is the unmodified input to the Lambda
     - Can't use mappings for headers, query string parameters as they are passed as arguments
@@ -1269,15 +1283,36 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Can set per-stage request limit to avoid account-level throttling
 - Stage Variables
     - API Gateway equivalent of environment variables
-    - Used to parametrize configuration values
-    - Can be passed to Lambda/HTTP endpoints as context to configure specific parameters
-    - Example: Stage variable that points to a Lambda alias for testing different versions
+    - Used to change configuration values without deploying the api
+    - Can be used in: `Lambda function ARN`, `HTTP Endpoint`, `Parameter mapping templates`
+    - Use cases:
+        - Configure HTTP endpoints your stages talk to (dev, test, prod…)
+        - Pass configuration parameters to AWS Lambda through mapping templates
+
     - You need to add the correct resource-based policy via CLI to each Lambda alias
+    - Stage variables are passed to the ”context” object in AWS Lambda
+## API Gateway – Canary Deployment
+
+- Possibility to enable canary deployments for any stage (usually prod)
+- Choose the % of traffic the canary channel receives
+- This is blue / green deployment with AWS Lambda & API Gateway
+
+## AWS API Gateway Swagger / Open API spec
+- Common way of defining REST APIs, using **API definition as code**
+- Import existing Swagger / OpenAPI 3.0 spec to API Gateway
+    - Method
+    - Method Request
+    - Integration Request
+    - Method Response
+- Can export current API as Swagger / OpenAPI spec
+- Swagger can be written in YAML or JSON
+- Using Swagger we can generate SDK for our applications
+
 
 ## Usage Plans
 
-- Can define configurations for customers to be able to access APIs as service
-- Users must supply API Key in the `x-api-key` header with their API calls
+- If you want to make an API available as an offering ($) to your customers
+- `Users must supply API Key in the `x-api-key` header with their API calls`
 - Settings that can be modified
     - Who can access API stages and methods
     - How many calls they can make and how frequently
