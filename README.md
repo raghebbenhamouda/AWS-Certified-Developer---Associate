@@ -1374,6 +1374,24 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - Lambda returns ad-hoc IAM Principal and IAM Policy which is cached
     - Authentication is via 3rd party, authorization is via Lambda
 ![Alt text](Lambda_authorizer.png "api")
+
+## HTTP API vs REST API
+- HTTP APIs:
+    - `low-latency`, `cost-effective AWS Lambda proxy`, HTTP **proxy** APIs and private integration (no data mapping)
+    - support OIDC and OAuth 2.0 authorization, and built-in support fo CORS
+    - No usage plans and API keys
+- REST APIs:
+    - All features **(except Native OpenID Connect / OAuth 2.0)**
+
+## WebSocket API 
+- Two-way interactive communication between a user’s browser and a server
+- Server can push information to the client without having the clients making a request to the server
+- This enables `stateful application`use cases
+- WebSocket APIs are often used in real- time applications such as chat applications, collaboration platforms, multiplayer games, and financial trading platforms.
+- Works with AWS Services (Lambda, DynamoDB) or HTTP endpoints
+- Routing: Incoming JSON messages are routed to a specific backend based on the routing expression
+
+
 # Step Functions
 
 ## Step Functions Overview
