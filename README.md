@@ -228,8 +228,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Packer Builder
     - Single/Multicontainer/Preconfigured Docker
     - Custom community-backed platforms for other language (Uses AMIs and Packer)
-## Web Server Tier vs. Worker Tier
-![Alt text](WebVsWorker.png "api")
+
 
 ## Elastic Beanstalk Deployment
 
@@ -241,19 +240,40 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - All at once ⇒ Fastest way to update, but brief downtime as instances aren't available
     - Rolling ⇒ Update few instances at a time and move to another set of instances once done
     - Rolling with batch ⇒ Like rolling, but new instances are created to keep old app available
-    - Immutable ⇒ New instances in new ASG with new version, swapping when healthy
+    - Immutable ⇒ New instances in new ASG with new version, High cost, double capacity, swapping when healthy
     - Blue/Green Deployment
-        - Not an out of the box feature of Elastic Beanstalk
+        - Not a “direct feature” of Elastic Beanstalk
         - Zero downtime, easier deployment
-        - Create a new staging environment and deploy the new version there
+        - Create a n**ew staging environment** and deploy the new version there
         - The new environment can be validated independently from the original one
-        - Use Route 53 weighted policies to redirect only portions of the traffic to the staging env
-        - Swap URLs in Elastic Beanstalk when the testing is done
+        - Use Route 53 weighted policies to redirect **only portions** of the traffic to the staging env
+        - **Swap URLs** in Elastic Beanstalk when the testing is done
+
+    - Traffic Splitting
+        - Canary Testing 
+        - New application version is deployed to a temporary ASG with the same capacity
+        - A small % of traffic is sent to the temporary ASG for a configurable amount of time
+        - Deployment health is monitored, If there’s a deployment failure, this triggers an automated rollback (very quick)
+        - No application downtime 
+        - New instances are migrated from the temporary to the original ASG
+        - Old application version is then terminated
+        - Vs Blue/Green Deployment: Traffic Splitting uses `ALB` while B/G usese `Swap URLs`
 
 ## Elastic Beanstalk CLI
 
 - Elastic Beanstalk has its own CLI called `EB cli`
 - Basic EB CLI commands are`eb create`, `eb status`, `eb health,` `eb deploy`, `eb logs`, `eb config` and `eb terminate`
+- It’s helpful for your automated deployment pipelines
+
+## Elastic Beanstalk Deployment Process
+- Describe dependencies(requirements.txt for Python, package.json for Node.js)
+- Package code as zip, and describe dependencies
+    - Python: requirements.txt
+    - Node.js: package.json
+- Console: upload zip file (creates new app version), and then deploy
+- CLI: create new app version using CLI (uploads zip), and then deploy
+- Elastic Beanstalk will deploy the zip on each EC2 instance, resolve dependencies and start the application
+
 
 ## Elastic Beanstalk Lifecycle Policy
 
@@ -264,10 +284,14 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 
 ## Elastic Beanstalk Extensions
 
-- Files that encode specific parameter settings found in the console programmatically
+- Files that encode specific parameter settings(Expl: environment variables to connect to a db) found in the console programmatically
 - Files must have `.config` extension and in the `.ebextensions/` directory at root level
 - YAML/JSON
 - You can add multiple resources such as RDS, DynamoDB, etc... but these resources are deleted on environment deletion
+
+## Elastic Beanstalk Under the Hood
+- Under the hood, Elastic Beanstalk relies on CloudFormation
+- Use case: you can define CloudFormation resources in your .ebextensions to provision ElastiCache, an S3 bucket, anything you want!
 
 ## Elastic Beanstalk Cloning
 
@@ -283,12 +307,12 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Steps for migration
         - Recreate a new environment configuration with no ELB
         - Select the correct ELB in the new environment
-        - Swap traffic from the old environment to the new one
+        - perform a CNAME swap or Route 53 update
         - Terminate old environment
 - RDS
-    - You can provision an RDS database with Elastic Beanstalk but the DB will be tied to the environment lifecycle ⇒ Good for dev/test, bad for prod
-    - Best approach is to create RDS independently and provide EB application with connection strings
-    - Steps for decoupling RDS
+    - You can provision an RDS database with Elastic Beanstalk but **the DB will be tied to the environment lifecycle** ⇒ Good for dev/test, bad for prod
+    - Best approach is to create RDS independently and provide EB application with connection strings(Expl: environment variables)
+    - Steps for decoupling RDS if it is already in our beanstalk stack
         - Create an RDS snapshot
         - Protect RDS DB from deletion
         - Recreate new environment without RDS
@@ -299,8 +323,8 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 ## Docker in Elastic Beanstalk
 
 - Single Docker
-    - Provide `dockerfile` or `Dockerrun.aws.json v1` that specifies where a pre-built image is
-    - Single Docker application does not use ECS but only Docker on an EC2 instance
+    - Provide `dockerfile` or `Dockerrun.aws.json v1` that specifies where a pre-built image is(Exp: ECS task definition)
+    - Single Docker application **does not use ECS but only Docker on an EC2 instance**
 - Multi Docker
     - Leverages ECS to run multiple container on various EC2 instances
     - Automatically provisions ECS Cluster, EC2 instances, Load Balancer and task execution
@@ -314,10 +338,24 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Can also redirect HTTP to HTTPs via ALB or via instance configuration (health checks should not be redirected)
 
 ## Difference between Web Server and Worker Environments
-
+![Alt text](WebVsWorker.png "api")
 - Worker environments are for tasks that take long time to compute or are on a schedule
 - These can be decoupled using SQS queues to send messages from web tier to worker tier
+- Example: processing a video, generating a zip file, etc
+![Alt text](WebVsWorker_arch.png "api")
 
+## Elastic Beanstalk – Custom Platform (Advanced)
+- Custom Platforms are very advanced, they allow to define from scratch:
+    - The Operating System (OS)
+    - Additional Software
+    - Scripts that Beanstalk runs on these platforms
+- Use case: app language is incompatible with Beanstalk & doesn’t use Docker
+- To create your own platform:
+    - Define an AMI using Platform.yaml file
+    - Build that platform using the Packer software (open source tool to create AMIs)
+- Custom Platform vs Custom Image (AMI):
+    - Custom Image is to tweak an existing Beanstalk Platform (Python, Node.js, Java…)
+    - Custom Platform is to create an entirely new Beanstalk Platform
 # CI/CD in AWS
 
 ## CI/CD Overview
