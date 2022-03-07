@@ -214,7 +214,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Free service, but pay for services provisioned
 - All the infrastructure, deployment and configuration is handled by AWS
 - Codebase is the only developer's responsibility
-- Three components of Elastic Beanstalk are Application, Application version and Environment name
+- Three components of Elastic Beanstalk are **Application**, **Application version** and **Environment name**
 - An application version is deployed in an environment and they can be promoted to next env
 - Can rollback to previous application versions
 - Support for multiple languages
@@ -228,6 +228,8 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Packer Builder
     - Single/Multicontainer/Preconfigured Docker
     - Custom community-backed platforms for other language (Uses AMIs and Packer)
+## Web Server Tier vs. Worker Tier
+![Alt text](WebVsWorker.png "api")
 
 ## Elastic Beanstalk Deployment
 
@@ -335,9 +337,13 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - All CodeCommit repos are private and have no size limit
 - All the code is in your AWS infrastructure
 - Integration with Jenkins, Travis, CircleCI and other third-party CI tools
-- Authentication is done through SSH (non-root accounts) or HTTPS with optional MFA
-- Authorization is via IAM Policies/Roles
+- Authentication
+    - through SSH (non-root accounts) or HTTPS with optional MFA
+- Authorization: is via IAM Policies/Roles
 - Encrypted at rest with KMS, in transit through SSL
+- Cross-account Access
+    - Do NOT share your SSH keys or your AWS credentials(username and password)
+    - Use an IAM Role in your AWS account and use AWS STS (AssumeRole API)
 - CodeCommit Notifications
     - Via SNS/Lambda ⇒ Branch deletion, push to master, build system notification, code analysis
     - Via CloudWatch Events Rules ⇒ Pull request updates, commit events
@@ -345,14 +351,16 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 ## CodePipeline
 
 - Visual continuous delivery workflow that orchestrates various steps of pipelines
-- Orchestrates source code from CodeCommit/GitHub/S3
-- Builds and tests using CodeBuild/Jenkins/other third party
-- Deploys using CodeDeploy/Beanstalk/CloudFormation/ECS/other AWS services
+- Orchestrates **source** code from CodeCommit/GitHub/S3
+- **Builds** and **tests** using CodeBuild/Jenkins/other third party
+- **Deploys** using CodeDeploy/Beanstalk/CloudFormation/ECS/other AWS services
 - Works on stages, each made of parallel or sequential actions and can request manual approval
-- Each stage generates artifacts, that are stored on S3 and passed to subsequent stages
+- **Each stage generates artifacts, that are stored on S3 and passed to subsequent stages**
 - Stage changes trigger CloudWatch Events that can create SNS notifications (failed/successful pipelines, cancelled processes, etc)
 - When a pipeline fails it stops and you can get additional info in the console
 - If a pipeline can't perform an action, it is likely due to IAM Policy issues
+- Require an IAM role attached to it
+- AWS CloudTrail can be used to audit AWS API calls
 
 ## CodeBuild
 
