@@ -1444,6 +1444,29 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Can share with specific AWS accounts
 - This prevents duplicate work, and just go straight to publishing
 - Application settings and behaviour can be customized using Environment variables
+
+# AWS Cloud Development Kit (CDK)
+
+## Overview
+
+- Define your cloud infrastructure using a familiar language: `JavaScript/TypeScript, Python, Java, and .NET`
+- Contains high level components called constructs(like vpc..)
+- The code is “compiled” into a CloudFormation template (JSON/YAML)
+- You can therefore deploy infrastructure and application runtime code together 
+- Great for **Lambda functions** 
+- Great for **Docker containers in ECS / EK**
+
+## CDK vs SAM
+- SAM:
+    - Serverless focused
+    - Write your template declaratively in JSON or YAML
+    - Great for quickly getting started with Lambda
+    - Leverages CloudFormation
+- CDK:
+    - `All AWS services`
+    - Write infra in a programming language JavaScript/TypeScript, Python, Java, and .NET
+    - Leverages CloudFormation
+
 # Step Functions
 
 ## Step Functions Overview
