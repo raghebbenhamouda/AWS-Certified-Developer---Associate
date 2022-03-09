@@ -906,12 +906,27 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Custom: send to any HTTP endpoint
 - Pay for data going through Firehose
 - No data storage(data only pass through)
-- `Near Real Time`
+- `Near Real Time(due of buffer size of buffer interval)`
+from Firehose to the destination.)`
     - 60 seconds latency minimum for non full batches
     - Or minimum 32 MB of data at a time
 - Supports many data formats, conversions, transformations, compression
 - Supports custom data transformations using **AWS Lambda**
 - Can send failed or all data to a backup S3 bucket
+
+## Kinesis Data Analytics (SQL application)
+![Alt text](Knesis_Data_Analytic.png "api")
+- Perform real-time analytics on Kinesis Streams using SQL
+- Fully managed, no servers to provision
+- Automatic scaling
+- Real-time analytics
+- Pay for actual consumption rate
+- Can create streams out of the real-time queries
+- Use cases:
+    - Time-series analytics
+    - Real-time dashboards
+    - Real-time metrics
+
 ## SQS vs SNS vs Kinesis
 
 - SQS
