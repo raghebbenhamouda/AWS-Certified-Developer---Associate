@@ -487,6 +487,13 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Can deploy to EC2 instances or on-prem, but on-prem has no Blue-Green deployment
 - Deployments can target tagged EC2 instances, ASGs or a mix of both
 
+###  Redeploy & Rollbacks
+- Rollback = redeploy a previously deployed revision of your application
+- Deployments can be rolled back:
+    - Automatically – rollback when a deployment fails or rollback when a CloudWatch Alarm thresholds are met
+    - Manually
+- Disable Rollbacks — do not perform rollbacks for this deployment
+- If a roll back happens, CodeDeploy redeploys the last known good revision as a new deployment (not a restored version)
 ## CodeStar
 
 - Integrated solution that groups together all the CI/CD related services
@@ -839,6 +846,14 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Use highly distributed partition key
     - Retries with exponential backoff
     - Increase the number shards (scaling)
+
+## Kinesis Data Streams Consumers
+    - Get data records from data streams and process them
+    - AWS Lambda
+    - Kinesis Data Analytics
+    - Kinesis Data Firehose
+    - Custom Consumer (AWS SDK) – Classic or Enhanced Fan-Out
+    - Kinesis Client Library (KCL): library to simplify reading from data stream
 ### Consumers Types
 - Shared (Classic) Fan-out Consumer - pull 
     - Low number of consuming applications
