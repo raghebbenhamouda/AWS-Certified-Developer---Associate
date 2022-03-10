@@ -1594,10 +1594,14 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 
 ## Cognito User Pools
 
-- Serverless user database for web and mobile apps
-- Handles login, password reset, email/phone verification, MFA, SAML/OpenID authentication
-- Uses JWT as login output
-- Can use a Hosted UI to handle your website's login
+- Create a serverless database of user for your web & mobile apps
+- Simple login: Username (or email) / password combination
+- Password reset
+- Email & Phone Number Verification
+- Multi-factor authentication (MFA)
+- Federated Identities: users from Facebook, Google, SAML…
+- Feature: block users if their credentials are compromised elsewhere
+- Login sends back a `JSON Web Token (JWT)`
 - Triggers ⇒ Custom Lambda functions that can be triggered at specific authentication stages
     - Auth events
         - Pre-authentication ⇒ Custom validation
