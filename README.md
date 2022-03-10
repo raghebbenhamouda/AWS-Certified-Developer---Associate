@@ -534,7 +534,7 @@ CodeDeploy, CloudFormation, CodePipeline, CloudWatch..)
     - HTML5
 - Issue tracking integration with Jira and GitHub issues
 - Integrates with Cloud9, AWS web-based IDE
-# AWS CodeArtifact
+## AWS CodeArtifact
 - Software packages depend on each other to be built (also called code dependencies)
 - Storing and retrieving these dependencies is called artifact management
 - Traditionally you need to setup your own artifact management system
