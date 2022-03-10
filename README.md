@@ -405,11 +405,11 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Fully managed build service ⇒ Alternative to Jenkins
 - No servers to provision, scales indefinitely, no build queue
 - Pay for actual usage time
-- Runs on Docker for build reproducibility and can use custom Docker images
+- **Runs on Docker** for build reproducibility and can use custom Docker images
 - Can run locally using Docker and CodeBuild Agent for troubleshooting
 - Integrates with KMS, IAM, VPC and CloudTrail
 - Source code comes from CodeCommit, CodePipeline, S3, GitHub, etc...
-- Build instructions are specified in a `buildspec.yml` file in the root folder
+- Build instructions are specified in a `buildspec.yml(like Jenkinsfile)` file in the root folder
     - Environment variables ⇒ Plain text or SSM Parameter Store encrypted
     - Phases
         - Install ⇒ Install dependencies
@@ -431,7 +431,7 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - Android
     - .NET Core
     - PHP
-    - Docker
+    - Docker – extend any environment you like
 - Access to service within CodeBuild pipelines
     - By default, CodeBuild containers are outside of your VPC, so they can't access VPC's resources
     - You have to specify a VPC configuration with proper Security Groups to access resources
@@ -458,6 +458,27 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     ```
 
     - You can tag instances to specify deployment environment
+
+- Steps To Make it Work:
+    - Each EC2 instance/on-premises server must be running the CodeDeploy Agent
+    - The agent is continuously polling AWS CodeDeploy for work to do
+    - Application + appspec.yml is pulled from GitHub or S3
+    - EC2 instances will run the deployment instructions in appspec.yml
+    - CodeDeploy Agent will report of success/failure of the deployment
+
+- Primary Components
+    - Application – a unique name functions as a container (revision, deployment configuration, …)
+    - Compute Platform – EC2/On-Premises, AWS Lambda, or Amazon ECS
+    - Deployment Configuration – a set of deployment rules for success/failure • EC2/On-premises – specify the minimum number of healthy instances for the deployment
+        - AWS Lambda or Amazon ECS – specify how traffic is routed to your updated versions
+        - Deployment Group - group of tagged EC2 instances (allows to deploy gradually, or dev, test, prod…)
+    - Deployment Type – method used to deploy the application to a Deployment Group 
+        - In-place Deployment – Applications are stopped, updated and restarted, supports EC2/On-Premises
+        - Blue/Green Deployment – New revision is installed on a new set of instances and ELB is switched over, supports EC2 instances only, AWS Lambda, and Amazon ECS
+    - IAM Instance Profile – give EC2 instances the permissions to access both S3 / GitHub
+    - Application Revision – application code + appspec.yml file
+    - Service Role – an IAM Role for CodeDeploy to perform operations on EC2 instances, ASGs, ELBs…
+    - Target Revision – the most recent revision that you want to deploy to a Deployment Group
 - CodeDeploy sends agents an `appspec.yml` file
     - Specifies deployment instructions
     - Sits at the root of the source code stored in GitHub or S3
@@ -471,15 +492,22 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
             - Install ⇒ Installation process
             - AfterInstall ⇒ Actions and commands after installation
             - ApplicationStart ⇒ Boot up applications and services
-            - ValidateService ⇒ Specify health checks to make sure the app is correctly deployed
+            - ValidateService(Most Important) ⇒ Specify health checks to make sure the app is correctly deployed
 - Deployment setting
     - One at the time ⇒ One instance at a time, stops deployment if one fails
     - Half at the time
     - All at once ⇒ All together, fast but no healthy host (appropriate for dev)
     - Custom ⇒ Specify percentage of minimum healthy hosts
-- Deploment Type
-    - In-place ⇒ Applications are stopped, updated and restarted
-    - Blue/Green ⇒ New revision is installed on a new set of instances and ELB is switched over
+
+- Failures:
+    - EC2 instances stay in “Failed” state
+    - New deployments will first be deployed to failed instances
+    - **To rollback, redeploy old deployment or enable automated rollback for failures**
+- Deployment Groups:
+    - A set of tagged EC2 instances
+    - Directly to an ASG
+    - Mix of ASG / Tags so you can build deployment segments
+    - Customization in scripts with DEPLOYMENT_GROUP_NAME environment variables
 - CodeDeploy agents report failure/success of deployment on their instance
 - Failed instances remain in "failed state" and future deployments deploy first to failed instances
 - Can enable auto-rollback in case of failures
@@ -487,16 +515,10 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 - Can deploy to EC2 instances or on-prem, but on-prem has no Blue-Green deployment
 - Deployments can target tagged EC2 instances, ASGs or a mix of both
 
-###  Redeploy & Rollbacks
-- Rollback = redeploy a previously deployed revision of your application
-- Deployments can be rolled back:
-    - Automatically – rollback when a deployment fails or rollback when a CloudWatch Alarm thresholds are met
-    - Manually
-- Disable Rollbacks — do not perform rollbacks for this deployment
-- If a roll back happens, CodeDeploy redeploys the last known good revision as a new deployment (not a restored version)
 ## CodeStar
 
-- Integrated solution that groups together all the CI/CD related services
+- Integrated solution that groups together all the CI/CD related services(GitHub, CodeCommit, CodeBuild,
+CodeDeploy, CloudFormation, CodePipeline, CloudWatch..)
 - Centralized dashboard for all components
 - Simple but not as customizable
 - Free service, pay per provisioned services
@@ -512,6 +534,22 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
     - HTML5
 - Issue tracking integration with Jira and GitHub issues
 - Integrates with Cloud9, AWS web-based IDE
+# AWS CodeArtifact
+- Software packages depend on each other to be built (also called code dependencies)
+- Storing and retrieving these dependencies is called artifact management
+- Traditionally you need to setup your own artifact management system
+- CodeArtifact is a secure, scalable, and cost-effective artifact management for software development
+- Works with common dependency management tools such as Maven, Gradle, npm, yarn, twine, pip, and NuGet
+- Developers and CodeBuild can then retrieve dependencies straight from CodeArtifact
+- The main two features of CodeArtifact are
+    - We can proxy public artifact repositories
+    - Have our own packages, within our own repo, in CodeArtifact
+
+## Amazon CodeGuru
+- An ML-powered service for **automated code reviews** and **application performance recommendations**
+- Provides two functionalities
+    - `CodeGuru Reviewer`: automated code reviews for static code analysis (development)
+    - `CodeGuru Profiler`: visibility/recommendations about application performance during runtime (production) 
 
 # CloudFormation
 
@@ -793,93 +831,25 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 ## Kinesis Overview
 
 - Managed real-time big data streaming alternative to Apache Kafka
-- Makes it easy to collect, process, and analyze streaming data in real-time 
-- Ingest real-time data such as: Application logs, Metrics, Website clickstreams, IoT telemetry data…
 - Data is replicated to 3 AZs
 - Three separate products
-    - Kinesis Stream ⇒ capture, process, and store data streams
-    - Kinesis Firehose ⇒ load data streams into AWS data stores
-    - Kinesis Analytics ⇒ analyze data streams with SQL or Apache Flink
-    - Kinesis Video Streams ⇒ capture, process, and store video streams
-## Kinesis Data Stream
+    - Kinesis Stream ⇒ Streaming ingestion of real-time data at scale
+    - Kinesis Firehose ⇒ Streaming data redirection tool
+    - Kinesis Analytics ⇒ Real-time analytics on streams using SQL
 
+## Kinesis Stream
+
+- Divided in ordered shards, which are individual queues that retain data between 1 and 7 days
+- Shards are provisioned, so billing is on a per-shard basis
+- Can increase or decrease number of shards (resharding and merging)
 - Producers publish data on one of the shards and consumers read data from either shard
+- Data in shards can be processed multiple times during retention period but can't be deleted
+- Multiple consumers can consume data from the same stream
+- Producers write up to 1MB/s or 1000 messages/s per shard
+- Consumers read up to 2 MB/s per shard
 - Can batch send messages for increased efficiency
-- Divided in ordered shards, which are individual queues
-    - A shard is **1MB/s** or **1000 messages/s** for writes and **2MB/s** per reads
-    - Billed per shard provisioned with 200 shards as a soft limit
-    - Shards number can increase over time to scale appropriately (reshard/merge)
-    - Records are ordered per shard
-    - One consumer per shard
-- Increase throughput by increasing number of shards
 - Messages are ordered per shard
 - Producers send data via SDK, consumers receive data via SKD or Kinesis Client Library (KCL)
-- **Data retention is 1 day by default but can be set to up to 365 days**
-- Once data enters stream it can't be deleted/removed
-- Can reprocess/replay data as data is retained after processing
-- Multiple applications can consume the same stream
-- A consumer receives a record that contains:
-    - `The partition key`
-    - `Sequence number`: represents where the record was in the shard(like the sorted key)
-    - `Data blob`
-- Useful when we have very large amount of data that needs to be ordered in many shards
-
-## Kinesis Producers
-- Puts data records into data streams
-- Data record consists of:
-    - `Sequence number` (unique per partition-key within shard)
-    - `Partition key` (must specify while put records into stream)
-    - `Data blob` (up to 1 MB)
-- Producers:
-    - `AWS SDK`: simple producer
-    - `Kinesis Producer Library (KPL)`: C++, Java, batch, compression, retries
-    - `Kinesis Agent`: monitor log files
-- Write throughput: 1 MB/sec or 1000 records/sec per shard
-- PutRecord API
-- Use batching with PutRecords API to reduce costs & increase throughput
-- **Use highly distributed parxxon key to avoid “hot parxxon”**
-
-### Kinesis - ProvisionedThroughputExceeded
-
-- If we go over the provision throughput per shard we get the `ProvisionedThroughputExceeded exception`
-- Solution:
-    - Use highly distributed partition key
-    - Retries with exponential backoff
-    - Increase the number shards (scaling)
-
-## Kinesis Data Streams Consumers
-    - Get data records from data streams and process them
-    - AWS Lambda
-    - Kinesis Data Analytics
-    - Kinesis Data Firehose
-    - Custom Consumer (AWS SDK) – Classic or Enhanced Fan-Out
-    - Kinesis Client Library (KCL): library to simplify reading from data stream
-### Consumers Types
-- Shared (Classic) Fan-out Consumer - pull 
-    - Low number of consuming applications
-    - Read throughput: `2 MB/sec per shard` across all consumers
-    - Max. 5 GetRecords API calls/sec
-    - Latency ~200 ms
-    - Minimize cost ($)
-    - Consumers poll data from Kinesis using GetRecords API call
-    - Returns up to 10 MB (then throttle for 5 seconds) or up to 10000 records
-- Enhanced Fan-out Consumer - push
-    - Multiple consuming applications for the same stream
-    - 2 MB/sec per consumer per shard
-    - Latency ~70 ms
-    - Higher costs ($$$)
-    - Kinesis pushes data to consumers over HTTP/2 (SubscribeToShard API)
-    - Soft limit of 5 consumer applications (KCL) per data stream (default)
-
-
-## Kinesis Security
-
-- Uses IAM Policies to control access and authorizations
-- HTTPS endpoint in-flight encryption
-- KMS for at-rest encryption
-- Client-side encryption
-- VPC endpoints to access Kinesis within a VPC
-- Monitor API calls using CloudTrail
 
 ## Sending Data to Kinesis
 
@@ -892,55 +862,10 @@ CLI v1 ⇒ `$(aws ecr get-login --no-include-email --region <region>)`
 
 ## Kinesis Client Library (KCL)
 
-- A Java library that helps read record from a Kinesis Data Stream with distributed applications sharing the read workload
+- Java Library that helps read records from a shard using distributed applications
 - Each shard can be read by one KCL instance ⇒ 1:1 Shard/KCL ratio
-- KCL instance can read from one or more shards
-- Progress is tracked via DynamoDB tables(needs IAM access)
-- Track other workers and share the work amongst shards using DynamoDB
-- KCL can run on EC2, Elastic Beanstalk, and on-premises
-- Records are read in order at the shard level
-## Kinesis Operation 
-### Shard Splitting
-- Used to increase the Stream capacity (1 MB/s data in per shard)
-- Used to divide a “hot shard” into 2 shards
-- The old shard is closed and will be deleted once the data is expired
-- `Kinesis have on-demand scaling which will automatically increase/decrease capacity`
-- Can’t split into more than two shards in a single operation
-
-### Merging Shards
-- Decrease the Stream capacity and save costs
-- Can be used to group two shards with low traffic (cold shards)
-- Old shards are closed and will be deleted once the data is expired
-- Can’t merge more than two shards in a single operation
-
-## Kinesis Data Firehose
-![Alt text](kinesisDataFirehose.png "api")
-- Fully Managed Service, no administration, automatic scaling, serverless
-    - AWS: Redshift / Amazon S3 / ElasticSearch
-    - 3rd party partner: Splunk / MongoDB / DataDog / NewRelic / …
-    - Custom: send to any HTTP endpoint
-- Pay for data going through Firehose
-- No data storage(data only pass through)
-- `Near Real Time(due of buffer size of buffer interval)`
-from Firehose to the destination.)`
-    - 60 seconds latency minimum for non full batches
-    - Or minimum 32 MB of data at a time
-- Supports many data formats, conversions, transformations, compression
-- Supports custom data transformations using **AWS Lambda**
-- Can send failed or all data to a backup S3 bucket
-
-## Kinesis Data Analytics (SQL application)
-![Alt text](Knesis_Data_Analytic.png "api")
-- Perform real-time analytics on Kinesis Streams using SQL
-- Fully managed, no servers to provision
-- Automatic scaling
-- Real-time analytics
-- Pay for actual consumption rate
-- Can create streams out of the real-time queries
-- Use cases:
-    - Time-series analytics
-    - Real-time dashboards
-    - Real-time metrics
+- Progress is tracked via DynamoDB tables
+- Can be deployed on EC2, Elastic Beanstalk or other
 
 ## SQS vs SNS vs Kinesis
 
