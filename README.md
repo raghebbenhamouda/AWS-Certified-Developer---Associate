@@ -1602,6 +1602,9 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - Federated Identities: users from Facebook, Google, SAML…
 - Feature: block users if their credentials are compromised elsewhere
 - Login sends back a `JSON Web Token (JWT)`
+- CUP integrates with **API Gateway** and Application **Load Balancer**
+
+![Alt text](cup.png "api")
 - Triggers ⇒ Custom Lambda functions that can be triggered at specific authentication stages
     - Auth events
         - Pre-authentication ⇒ Custom validation
@@ -1615,12 +1618,29 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
         - Custom message ⇒ Localization or personalization
     - Token Creation
         - Pre-Token generation ⇒ Customize token attributes
+### Hosted Authentication UI
+- Cognito has a **hosted authentication UI** that you can add to your app to handle signup and sign-in workflows
+- Using the hosted UI, you have a foundation for integration with social logins, OIDC or SAML
+- Can customize with a **custom logo** and **custom CSS**
+
 
 ## Cognito Identity Pools
+![Alt text](cognito-identy-pool.png "api")
+- Used to provide `temporary AWS credentials` to access services in our accounts
+- Your identity pool (e.g identity source) can include:
+    - Public Providers (Login with Amazon, Facebook, Google, Apple)
+    - **Users in an Amazon Cognito user pool**
+    - OpenID Connect Providers & SAML Identity Providers
+- **Users can then access AWS services directly or through API Gateway**
+    - The IAM policies applied to the credentials are defined in Cognito
+    - They can be customized based on the user_id for fine grained control
 
-- Used to provide temporary AWS credentials to access services in our accounts
-- Identity providers include public ones (Facebook, etc...), Cognito User Pool, SAML/OpenID, custom third-party login servers or unauthenticated guest access
-- Users can then access services via API Gateway or directly with Cognito-defined IAM policies
+### Cognito Identity Pools – IAM Roles
+- Default IAM roles for authenticated and guest users
+- Define rules to choose the role for each user based on the user’s ID
+- You can partition your users’ access using policy variables
+- IAM credentials are obtained by Cognito Identity Pools through STS
+- The roles must have a **“trust” policy** of Cognito Identity Pools
 
 # Identity-related Additional Services
 
