@@ -1600,6 +1600,13 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - States.TaskFailed: execution failure
     - States.Permissions: insufficient privileges to execute code
 - The state may report is own errors
+### Retry (Task or Parallel State)
+![Alt text](retry.png "api")
+### Catch (Task or Parallel State)
+![Alt text](catch.png "api")
+### ResultPath
+![Alt text](ResultPath.png "api")
+
 ## Workflows
 
 - Standard workflow
