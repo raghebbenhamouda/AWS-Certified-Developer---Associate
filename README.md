@@ -1624,6 +1624,14 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
     - Execution can be debugged with CloudWatch Logs
     - At-least-once execution
 
+
+## AWS AppSync
+
+- Managed GraphQL(API) service
+- GraphQL makes it easy for applications to get exactly the data they need
+- Integrates with DynamoDB, ElasticSearch, Aurora and other services
+- Retrieve data in **real-time with WebSocket or MQTT on WebSocket**
+- Local data access and synchronization for mobile apps
 # Amazon Cognito
 
 ## Cognito Overview
@@ -1792,12 +1800,6 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 
 # Other Services
 
-## AWS AppSync
-
-- Managed GraphQL service
-- Integrates with DynamoDB, ElasticSearch, Aurora and other services
-- Retrieve real-time data using WebSockets
-- Local data access and synchronization for mobile apps
 
 ## AWS SES
 
