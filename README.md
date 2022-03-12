@@ -1587,6 +1587,19 @@ $CEIL(MAX((RCU/3000+WCU/1000),(SIZE/10GB))$
 - `Wait State` - Provide a delay for a certain amount of time or until a specified time/date.
 - `Map State` - Dynamically iterate steps.
 -` Parallel State` - Begin parallel branches of execution.
+
+### Error Handling in Step Functions
+- Any state can encounter runtime errors for various reasons:
+    - State machine definition issues (for example, no matching rule in a Choice state)
+    - Task failures (for example, an exception in a Lambda function)
+    - Transient issues (for example, network partition events)
+- Use **Retry** (to retry failed state) and **Catch** (transition to failure path) in the State Machine to handle the errors instead of inside the Application Code
+- Predefined error codes:
+    - States.ALL : matches any error name
+    - States.Timeout: Task ran longer than TimeoutSeconds or no heartbeat received
+    - States.TaskFailed: execution failure
+    - States.Permissions: insufficient privileges to execute code
+- The state may report is own errors
 ## Workflows
 
 - Standard workflow
