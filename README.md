@@ -561,8 +561,8 @@ CodeDeploy, CloudFormation, CodePipeline, CloudWatch..)
     - Version control the entire infrastructure
     - Can review infrastructure changes in code and not via the console
     - Can optimize resource usage by creating and destroying stacks on schedule
-- Cost tracking becomes easier as you can tag every resource and get stack estimates
-- Can create as many stacks as needed to separate layers
+- **Cost tracking** becomes easier as you can tag every resource and get stack estimates
+- Can create as many stacks(VPC stacks/Network stacks/App stacks) as needed to separate layers
 - Template can't be updated but new ones have to be uploaded (S3 versioned in the background)
 - Deleting a stack deletes all resources created with it
 - Templates can be built in the console or using YAML/JSON files deployed via CLI
